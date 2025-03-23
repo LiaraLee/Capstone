@@ -8,20 +8,15 @@ const LoginForm = () => {
     email: "",
     password: "",
   });
-  //everything above staed the same
 
-  //we need to add a way for people to become a member and a button that toggles between login and signup.
-  //here we will declare a new state variable isLogin and set it to true. This will help us toggle between login and signup
+  const [errors, setErrors] = useState({});
+  const [isLogin, setIsLogin] = useState(true);
+  const [message, setMessage] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // To toggle password visibility, like when you want to see the text you are typing in the password field 
+  //this is how you add a new state variable to your component. We set the initial value of isPasswordVisible to false because we want the password to be hidden by default.
 
-  //we will also add a new state variable message to display a message to the user after login or signup.
+  //handle and validate stay the same
 
-  //I know the errors have been moved we will address them later on in the code. we need to declare it now so that we can use it later on.
-
-  const [errors, setErrors] = useState({}); //error state
-  const [isLogin, setIsLogin] = useState(true); // Toggle between login & signup
-  const [message, setMessage] = useState(""); // Display message to user
-
-  //we do not need to change the handleChange function as it is the same as before
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -29,27 +24,30 @@ const LoginForm = () => {
       [name]: value,
     }));
   };
-  //last time we did this section a little differntly. We took each varriale that we needed to store data and declared them created a state variable for each of them and then set them to empty strings. This time we are going to declare them all, but rely on the formData state variable to store the data. This is a more efficient way of doing things. less code and less state variables to keep track of.
 
   const validate = () => {
     let isValid = true;
     let validationErrors = {};
 
-    //if email and if password stay the same as before because they are required for both login and signup and should not need to be changed. maybe we should set some parameters here?
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/; //this looks wild but it's a simple regex to validate email addresses, regex means regular expression and we use it to match patterns in strings. here we have an array of characters that are allowed in an email address, followed by an @ symbol (email@___), followed by another array of characters that are allowed in an email address(emai@gmail__), followed by a dot (email@gmail._), followed by 2 to 6 characters that are allowed in an email address(email@gmail.com). The ^ and $ at the beginning and end of the regex mean that the regex should match the entire string, not just a part of it.
 
+    //now that we set our parameters lets check if the email and password are valid or not and set the error messages accordingly
+
+    //if formData.email is empty, set validationErrors.email to "Email is required" and isValid to false
     if (!formData.email) {
       validationErrors.email = "Email is required";
       isValid = false;
+      //if formData.email is not empty and it doesn't match the emailRegex, set validationErrors.email to "Please enter a valid email address" and isValid to false
+    } else if (!emailRegex.test(formData.email)) {
+      validationErrors.email = "Please enter a valid email address";
+      isValid = false;
     }
-
+//if formData.password is empty, set validationErrors.password to "Password is required" and isValid to false
     if (!formData.password) {
       validationErrors.password = "Password is required";
       isValid = false;
     }
-
-    //if the user is not logged in then we need to validate the name and address fields. we will do this by checking if the isLogin state variable is false. if it is false then we will validate the name and address fields. if it is true then we will not validate the name and address fields. we will also set the validation errors for the name and address fields if they are not filled out.
-
-    //we need a new if statement to make this happen. but after this if statement the formData.name and formData.address will be the same as before. we will not need to change them.
+//if isLogin is false (meaning the user is trying to sign up) and formData.name is empty, set validationErrors.name to "Name is required" and isValid to false
     if (!isLogin) {
       if (!formData.name) {
         validationErrors.name = "Name is required";
@@ -60,72 +58,62 @@ const LoginForm = () => {
         isValid = false;
       }
     }
-    //we dont need to change the setErrors function as it is the same as before. we will set the errors to the validationErrors object that we created in the validate function.
+
     setErrors(validationErrors);
     return isValid;
   };
+//first cybersecurity!!! hash the password before storing it in the local storage. hash means to convert the password into a random string of characters that can't be converted back to the original password. this is done to protect the password from being stolen.
+
+//we set it up the same way we usually do. we create a function called hashPassword that takes a password (the one the user is typing in our form) as an argument and returns the password split into an array of characters, reversed, and joined back into a string. this is a simple way to hash a password but it's not actually secure. in a real-world application, you would use a more secure hashing algorithm like bcrypt. but its fun to try!
+  const hashPassword = (password) => {
+    return password.split("").reverse().join("");
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    setMessage(""); //we need to add this line of code to clear the message after the user logs in or signs up. this will make sure that the message is not displayed after the user logs out
+    setMessage("");
 
-    if (!validate()) return; //if the form is not valid then we will return and not submit the form. we will only submit the form if the form is valid.
+    if (!validate()) return;
 
-    //we want to make sure that the user trying to log in exists in the local storage. we will do this by checking if the user exists in the local storage. if the user exists in the local storage then we will log the user in. if the user does not exist in the local storage then we will display an error message to the user. we will also display an error message if the user enters the wrong email or password.
-
-    //starting with the login we say if isLogin (we just worked on this above) declare storedUser getItem "user" from localStorage and convert (parse) the user from local storage to a JSON object.
     if (isLogin) {
       const storedUser = JSON.parse(localStorage.getItem("user"));
-
-      //if the storedUser exists and the storedUser email and password match the formData email and password then we will display a message to the user that says "Login successful!".
-
-      // === means equals to and && means and, & alone can be used as a bitwise operator so to avoid confusion we use &&. = is an assignment operator and == is a comparison operator so we use === to compare the two values?
 
       if (
         storedUser &&
         storedUser.email === formData.email &&
-        storedUser.password === formData.password
+        storedUser.password === hashPassword(formData.password)
       ) {
-        //if above is true display this:
         setMessage("Login successful!");
-        // else display this:
       } else {
         setMessage("Invalid email or password.");
       }
-      //instead of elif we just use else because we are not checking for anything else.
-
-      //so if the login and password are not correct/true/stored we will check if the user is not logged in. if the user is not logged in then we will store the user in the local storage. we will do this by setting the item "user" in the local storage to the formData object. we will also display a message to the user that says "Registration successful! Please log in.".
     } else {
-      // we register the user by storing the user in the local storage and setting formData to the item "user" in the local storage.
-      localStorage.setItem("user", JSON.stringify(formData));
-      // we display a message to the user that says "Registration successful! Please log in."
+      const hashedPassword = hashPassword(formData.password); //we hash the password before storing it in the local storage to keep it safe
+      localStorage.setItem("user", JSON.stringify({ ...formData, password: hashedPassword })); //we store the user data in the local storage as a JSON string. we spread the formData object and replace the password with the hashedPassword, spread means to copy all the properties of an object into a new object. this is done to keep the original formData object unchanged.
       setMessage("Registration successful! Please log in.");
-      //this whole if section has been our handleSubmit so we dont need to add in the old handleSubmit code or the validation for it ecase we have already done that above.
-
-      //if we made it this far then we need to set the isLogin state variable to true. this will make sure that the user is logged in after they sign up. we will do this by calling the setIsLogin function and passing in true as an argument.
       setIsLogin(true);
     }
   };
-  //now we will finally return (render for the user) the form.
+//last thing before we return is to add a function that toggles the password visibility. we want to be able to see the password we are typing in the password field, so we add a button that toggles the password visibility when clicked. we create a function called togglePasswordVisibility that toggles the isPasswordVisible state variable between true and false. we set the type of the password input field to "text" if isPasswordVisible is true and "password" if it's false. this way, the password is visible when the button is clicked and hidden when it's not.
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
 
-  //last time we had a form tag and then we had a div tag for each input field. We want this to be a dynamic as possible so we can reuse it any time we need a log in or sign up form.
   return (
     <div>
-      {/*isLogin true display login if not display create account, ? is a ternary operator that is used to evaluate a condition. if the condition is true then the first value is returned. if the condition is false then the second value is returned, sort of short hand for an if else statement*/}
-
       <h2>{isLogin ? "Login" : "Create Account"}</h2>
+{/*beacause we want to keep things as clear as possible we set the class of the div to "success-message" if the message includes the word "successful" and "error" if it doesn't. 
+*/}
 
-      {/*&& here is a logical operator that is used to evaluate a condition. so if the condition (message) is true then the element {message} is displayed. if the condition is false then the element is not displayed, the color is a style attribute that is used to set the color of the text to green or whatever you want
-       */}
-      {message && <div style={{ color: "green" }}>{message}</div>}
-
-      {/* now we established if the user is loged in or not, we need to handle the submition of that form because as of now all we have done is check if the user is logged in or not and run it through the validation function
-       */}
-
-      {/*When the user clicks the "Submit" button, the handleSubmit function runs. we declare onSubmit=handleSUbmit to start our form*/}
+{/* message is a state variable that holds the message we want to display to the user. we set the message to an empty string by default. we display the message in a div element if it's not an empty string. we set the class of the div to "success-message" if the message includes the word "successful" and "error" if it doesn't. this way, we can style the message differently based on whether it's a success message or an error message.
+*/}
+      {message && (
+        <div className={message.includes("successful") ? "success-message" : "error"}>
+          {message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
-        {/* now we need to add the input fields to the form. but we only display them if isLogin is not true
-         */}
         {!isLogin && (
           <>
             <div>
@@ -133,14 +121,12 @@ const LoginForm = () => {
                 type="text"
                 name="name"
                 placeholder="Name"
-                value={formData.name} //we need to add this line of code to display the name in the input field after the user logs in or signs up. this will make sure that the name is displayed in the input field after the user logs out
-                onChange={handleChange} //we need to add this line of code to update the name in the formData object when the user types in the input field. this will make sure that the name is updated in the formData object when the user types in the input field
+                value={formData.name}
+                onChange={handleChange}
               />
-              {/*similar syntax to message but this time we are checking if the name is not filled out and if it is not filled out then we will display an error message to the user. we will also display an error message if the name is not filled out. it shows the error message if th ename is incorrect or empty in red, why use a div here? */}
-              {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
+              {errors.name && <div className="error">{errors.name}</div>}
+              {/*here we insert the class instead of style to make it easier to style the error message individually in the css file*/}
             </div>
-
-            {/*same as above but for address */}
             <div>
               <input
                 type="text"
@@ -149,13 +135,10 @@ const LoginForm = () => {
                 value={formData.address}
                 onChange={handleChange}
               />
-              {errors.address && (
-                <div style={{ color: "red" }}>{errors.address}</div>
-              )}
+              {errors.address && <div className="error">{errors.address}</div>}
             </div>
           </>
         )}
-        {/*same as above but for email */}
         <div>
           <input
             type="email"
@@ -164,36 +147,30 @@ const LoginForm = () => {
             value={formData.email}
             onChange={handleChange}
           />
-          {errors.email && <div style={{ color: "red" }}>{errors.email}</div>}
+          {errors.email && <div className="error">{errors.email}</div>}
         </div>
-        {/*same as above but for password */}
         <div>
+          {/*passowrd visibility toggle button is now added to the form so users can see it. we add a button element that calls the togglePasswordVisibility function when clicked. we set the type of the button to "button" to prevent the form from submitting when the button is clicked. we display the text "Hide Password" if isPasswordVisible is true and "Show Password" if it's false. this way, the button text changes based on whether the password is visible or not.
+          */}
           <input
-            type="password"
+            type={isPasswordVisible ? "text" : "password"}
             name="password"
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
           />
-          {errors.password && (
-            <div style={{ color: "red" }}>{errors.password}</div>
-          )}
+          {errors.password && <div className="error">{errors.password}</div>}
+          <button type="button" onClick={togglePasswordVisibility}>
+            {isPasswordVisible ? "Hide" : "Show"} Password
+          </button>
         </div>
-        {/*this is our button that changes dynamically based on the isLogin state variable. if the isLogin state variable is true then the button text is "Login". if the isLogin state variable is false then the button text is "Sign Up". we will also add a type attribute to the button element and set it to "submit". this will make sure that the form is submitted when the user clicks the button.
-         */}
-        <button type="submit">{isLogin ? "Login" : "Sign Up"}</button>{" "}
-        {/*its a submit button that says either login or sign up based on isLogin*/}
+        <button type="submit">{isLogin ? "Login" : "Sign Up"}</button>
       </form>
-      {/* onclick the button will toggle between login and sign up. we will do this by calling the setIsLogin function and passing in the opposite of the isLogin state variable as an argument. if the isLogin state variable is true then we will pass in false as an argument. if the isLogin state variable is false then we will pass in true as an argument. this will toggle between login and sign up.
-       */}
       <button onClick={() => setIsLogin(!isLogin)}>
-        {isLogin
-          ? "Need an account? Sign up"
-          : "Already have an account? Log in"}
+        {isLogin ? "Need an account? Sign up" : "Already have an account? Log in"}
       </button>
     </div>
   );
 };
 
-//we export the LoginForm component (the whole code we just worked on that we declared under the imports at the top of this page) so that we can use it in other files
 export default LoginForm;
