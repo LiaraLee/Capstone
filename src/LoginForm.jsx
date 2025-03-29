@@ -1,4 +1,3 @@
-// LoginForm.jsx
 import React, { useState } from 'react';
 import InputField from './InputField';
 
@@ -12,13 +11,29 @@ const LoginForm = ({ setMessage }) => {
 
   const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validate and send login data (this is just an example)
-    if (email === 'user@example.com' && password === 'password123') {
-      setMessage('Login Successful!');
-    } else {
-      setMessage('Invalid email or password');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store the token in localStorage
+        localStorage.setItem('authToken', data.token);
+        setMessage('Login Successful!');
+      } else {
+        setMessage(data.message || 'Invalid email or password');
+      }
+    } catch (error) {
+      setMessage('Error connecting to server');
     }
   };
 
